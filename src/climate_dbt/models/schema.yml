@@ -1,0 +1,49 @@
+version: 2
+models:
+  - name: stg_carbon_emissions
+    description: "Tabel staging untuk data emisi karbon yang telah dibersihkan."
+    columns:
+      - name: created_at
+        description: "Timestamp saat data disimulasikan."
+        tests:
+          - not_null
+      - name: region
+        description: "Wilayah asal data emisi."
+        tests:
+          - not_null
+          # ✅ BARU: pastikan region selalu salah satu dari 4 nilai yang valid --
+          # kalau ada typo/region baru yang tidak sengaja masuk (mis. dari bug di
+          # pipeline), test ini akan gagal dan ketahuan sebelum sampai ke Sheets/dashboard.
+          - accepted_values:
+              arguments:
+                values: ['Texas', 'Jakarta', 'Texas (Prediction)', 'Jakarta (Prediction)']
+      - name: carbon_emission_forecast_mt
+        description: "Nilai prediksi emisi karbon dalam Metrik Ton."
+        tests:
+          - not_null
+          # Validasi rentang (tidak boleh negatif) ada di tests/assert_carbon_emission_non_negative.sql
+      - name: live_temperature
+        description: "Suhu aktual pada waktu terkait."
+        tests:
+          - not_null:
+              config:
+                where: "region NOT LIKE '%Prediction%'"
+          # Validasi rentang wajar ada di tests/assert_temperature_reasonable_range.sql
+      # Kolom baru dari modul ML (Prophet, IsolationForest) -- boleh NULL untuk
+      # baris yang belum diproses ML (mis. sebelum histori cukup, atau baris
+      # aktual yang tidak punya interval Prophet), jadi TIDAK diberi test not_null.
+      - name: prophet_upper
+        description: "Batas atas interval ketidakpastian forecast Prophet (30 hari), hanya terisi untuk baris prediksi."
+      - name: prophet_lower
+        description: "Batas bawah interval ketidakpastian forecast Prophet (30 hari), hanya terisi untuk baris prediksi."
+      - name: is_anomaly
+        description: "0 = Normal, 1 = Anomaly (dari IsolationForest), NULL = model belum cukup data untuk dilatih."
+        tests:
+          # ✅ BARU: hanya boleh 0, 1, atau NULL. NULL otomatis lolos test ini
+          # (perilaku bawaan accepted_values di dbt), jadi tidak konflik dengan
+          # baris "belum cukup data untuk dilatih".
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+      - name: recommended_carbon_cap_mt
+        description: "Batas emisi yang direkomendasikan: Normal -> forecast x0.95, Anomaly -> baseline x1.05."
