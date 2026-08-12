@@ -1,0 +1,15 @@
+version: 2
+
+# ⚠️ FILE REKONSTRUKSI: file asli tidak pernah diberikan ke Claude, jadi ini
+# dibuat ulang berdasarkan nama tabel yang PASTI dipakai pipeline-prefect.py
+# (lihat fungsi load_to_duckdb(): `CREATE TABLE raw_carbon_emissions (...)`).
+# Kalau Anda menemukan file sources.yml ASLI dari Space lama, GANTI file ini
+# dengan yang asli untuk memastikan tidak ada perbedaan konfigurasi.
+
+sources:
+  - name: raw
+    schema: main
+    tables:
+      - name: carbon_emissions
+        identifier: raw_carbon_emissions
+        description: "Tabel mentah hasil load_to_duckdb() di pipeline-prefect.py."

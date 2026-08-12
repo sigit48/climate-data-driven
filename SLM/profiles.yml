@@ -1,0 +1,7 @@
+climate_dbt:
+  outputs:
+    dev:
+      type: duckdb
+      path: ../../your_project.db # Menyesuaikan posisi database di root jika dbt jalan di src/climate_dbt
+      threads: 1
+  target: dev
